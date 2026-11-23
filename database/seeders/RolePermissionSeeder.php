@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -22,16 +23,24 @@ class RolePermissionSeeder extends Seeder
         ];
 
         foreach ($permisos as $permiso) {
-            Permission::create(['name' => $permiso]);
+            Permission::findOrCreate($permiso);
         }
 
-        $administrador = Role::create(['name' => 'Administrador']);
-        $usuario = Role::create(['name' => 'Usuario']);
+        $administrador = Role::findOrCreate('Administrador');
+        $usuario = Role::findOrCreate('Usuario');
 
         $administrador->givePermissionTo(Permission::all());
 
         $usuario->givePermissionTo([
             'ver contenido',
         ]);
+
+        $correoAdmin = getenv('ADMIN_EMAIL');
+        if ($correoAdmin) {
+            $user = User::whereRaw('lower(email) = ?', [strtolower($correoAdmin)])->first();
+            if ($user) {
+                $user->syncRoles(['Administrador']);
+            }
+        }
     }
 }
